@@ -1,0 +1,13 @@
+frontend:
+  image: artisanatek/kubecoin-frontend:1.0
+  nodePort: 30000
+
+backend:
+  image: artisanatek/kubecoin-backend:1.0
+
+postgres:
+  image: postgres:15-alpine
+  storage: 1Gi
+  user: postgres
+  password: password
+  db: kubecoin
