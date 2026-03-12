@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubecoin-config
+  namespace: infra
+data:
+  POSTGRES_DB: {{ .Values.postgres.db }}
+  DB_HOST: postgres-headless.infra.svc.cluster.local
+  DB_NAME: {{ .Values.postgres.db }}
+
+  BACKEND_URL: "http://backend-service:5000"
