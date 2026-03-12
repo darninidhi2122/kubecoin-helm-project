@@ -5,7 +5,6 @@ environment {
 DOCKER_USER = "darninidhi2122"
 DOCKER_CRED = "dockerhub-creds"
 
-```
 FRONTEND_IMAGE = "kubecoin-frontend"
 BACKEND_IMAGE  = "kubecoin-backend"
 
@@ -16,7 +15,6 @@ INFRA_NAMESPACE = "infra"
 
 APP_CHART   = "./kubecoin-chart/app"
 INFRA_CHART = "./kubecoin-chart/postgres"
-```
 
 }
 
@@ -26,7 +24,6 @@ githubPush()
 
 stages {
 
-```
 stage('Checkout Source') {
   steps {
     checkout scm
@@ -121,13 +118,11 @@ stage('Verify Deployment') {
     '''
   }
 }
-```
 
 }
 
 post {
-
-```
+  
 success {
   echo "Application deployed successfully using Helm."
 }
@@ -139,7 +134,6 @@ failure {
 always {
   cleanWs()
 }
-```
 
 }
 }
