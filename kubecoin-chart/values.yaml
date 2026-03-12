@@ -1,9 +1,11 @@
 frontend:
-  image: artisanatek/kubecoin-frontend:1.0
+  image: darninidhi2122/kubecoin-frontend
+  tag: latest
   nodePort: 30000
 
 backend:
-  image: artisanatek/kubecoin-backend:1.0
+  image: darninidhi2122/kubecoin-backend
+  tag: latest
 
 postgres:
   image: postgres:15-alpine
