@@ -1,7 +1,7 @@
 frontend:
   image: darninidhi2122/kubecoin-frontend
   tag: latest
-  nodePort: 30000
+  nodePort: 30006
 
 backend:
   image: darninidhi2122/kubecoin-backend
