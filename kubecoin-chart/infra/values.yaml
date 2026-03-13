@@ -1,0 +1,15 @@
+frontend:
+  image: darninidhi2122/kubecoin-frontend
+  tag: latest
+  nodePort: 30006
+
+backend:
+  image: darninidhi2122/kubecoin-backend
+  tag: latest
+
+postgres:
+  image: postgres:15-alpine
+  storage: 1Gi
+  user: postgres
+  password: password
+  db: kubecoin
