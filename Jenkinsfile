@@ -1,6 +1,9 @@
 pipeline {
 agent {
-  label 'devops-agent'
+  kubernetes {
+    label 'devops-agent'
+    defaultContainer 'devops'
+  }
 }
 
 environment {
