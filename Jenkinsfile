@@ -2,14 +2,14 @@ pipeline {
 
 agent {
   kubernetes {
-    label 'devops-agent'
+    inheritFrom 'devops-agent'
     defaultContainer 'devops'
   }
 }
 
 environment {
+
   DOCKER_USER = "darninidhi2122"
-  DOCKER_CRED = "dockerhub-creds"
 
   FRONTEND_IMAGE = "kubecoin-frontend"
   BACKEND_IMAGE  = "kubecoin-backend"
@@ -20,7 +20,7 @@ environment {
   INFRA_NAMESPACE = "infra"
 
   APP_CHART   = "./kubecoin-chart/app"
-  INFRA_CHART = "./kubecoin-chart/postgres"
+  INFRA_CHART = "./kubecoin-chart/infra"
 }
 
 stages {
@@ -34,50 +34,27 @@ stage('Checkout Source') {
 stage('Verify Tools') {
   steps {
     sh '''
-    docker --version
     kubectl version --client
     helm version
     '''
   }
 }
 
-stage('Docker Login') {
+stage('Build & Push Images (Kaniko)') {
   steps {
-    withCredentials([usernamePassword(
-      credentialsId: DOCKER_CRED,
-      usernameVariable: 'DOCKER_USERNAME',
-      passwordVariable: 'DOCKER_PASSWORD'
-    )]) {
-      sh '''
-      echo "$DOCKER_PASSWORD" | docker login \
-      -u "$DOCKER_USERNAME" --password-stdin
-      '''
+    container('kaniko') {
+      sh """
+      /kaniko/executor \
+        --context=frontend \
+        --dockerfile=frontend/Dockerfile \
+        --destination=$DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG
+
+      /kaniko/executor \
+        --context=backend \
+        --dockerfile=backend/Dockerfile \
+        --destination=$DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG
+      """
     }
-  }
-}
-
-stage('Build and Push Images') {
-  steps {
-    sh """
-    /kaniko/executor \
-      --context=frontend \
-      --dockerfile=frontend/Dockerfile \
-      --destination=$DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG
-
-    /kaniko/executor \
-      --context=backend \
-      --dockerfile=backend/Dockerfile \
-      --destination=$DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG
-    """
-  }
-}
-
-stage('Push Docker Images') {
-  steps {
-    sh """
-    docker push $DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG
-    docker push $DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG
-    """
   }
 }
 
@@ -90,7 +67,7 @@ stage('Create Namespaces') {
   }
 }
 
-stage('Deploy Postgres') {
+stage('Deploy Postgres (Infra)') {
   steps {
     sh """
     helm upgrade --install postgres ${INFRA_CHART} \
@@ -100,7 +77,7 @@ stage('Deploy Postgres') {
   }
 }
 
-stage('Deploy App') {
+stage('Deploy Application (App Namespace)') {
   steps {
     sh """
     helm upgrade --install kubecoin ${APP_CHART} \
@@ -116,10 +93,13 @@ stage('Deploy App') {
 stage('Verify Deployment') {
   steps {
     sh '''
-    kubectl get pods -n app
-    kubectl get svc -n app
-    kubectl get pods -n infra
-    kubectl get svc -n infra
+    echo "Checking app namespace..."
+    kubectl get pods -n $APP_NAMESPACE
+    kubectl get svc -n $APP_NAMESPACE
+
+    echo "Checking infra namespace..."
+    kubectl get pods -n $INFRA_NAMESPACE
+    kubectl get svc -n $INFRA_NAMESPACE
     '''
   }
 }
@@ -127,15 +107,19 @@ stage('Verify Deployment') {
 }
 
 post {
-  success {
-    echo "Application deployed successfully using Helm."
-  }
-  failure {
-    echo "Pipeline failed. Check logs."
-  }
-  always {
-    cleanWs()
-  }
+
+success {
+  echo "Application deployed successfully using Helm."
+}
+
+failure {
+  echo "Pipeline failed. Check logs."
+}
+
+always {
+  cleanWs()
+}
+
 }
 
 }
