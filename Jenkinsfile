@@ -1,5 +1,7 @@
 pipeline {
-agent any
+agent {
+  label 'devops-agent'
+}
 
 environment {
 DOCKER_USER = "darninidhi2122"
