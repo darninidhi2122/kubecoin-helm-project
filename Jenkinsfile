@@ -56,11 +56,18 @@ stage('Docker Login') {
   }
 }
 
-stage('Build Docker Images') {
+stage('Build and Push Images') {
   steps {
     sh """
-    docker build -t $DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG frontend/
-    docker build -t $DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG backend/
+    /kaniko/executor \
+      --context=frontend \
+      --dockerfile=frontend/Dockerfile \
+      --destination=$DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG
+
+    /kaniko/executor \
+      --context=backend \
+      --dockerfile=backend/Dockerfile \
+      --destination=$DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG
     """
   }
 }
