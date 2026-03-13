@@ -13,7 +13,7 @@ DOCKER_CRED = "dockerhub-creds"
 FRONTEND_IMAGE = "kubecoin-frontend"
 BACKEND_IMAGE  = "kubecoin-backend"
 
-IMAGE_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+IMAGE_TAG = "${env.BUILD_NUMBER}"
 
 APP_NAMESPACE   = "app"
 INFRA_NAMESPACE = "infra"
@@ -136,8 +136,11 @@ failure {
   echo "Pipeline failed. Check logs."
 }
 
-always {
-  cleanWs()
+post {
+  always {
+    sh 'docker logout'
+    cleanWs()
+  }
 }
 
 }
