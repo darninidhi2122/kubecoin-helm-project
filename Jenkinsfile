@@ -1,4 +1,5 @@
 pipeline {
+
 agent {
   kubernetes {
     label 'devops-agent'
@@ -7,24 +8,19 @@ agent {
 }
 
 environment {
-DOCKER_USER = "darninidhi2122"
-DOCKER_CRED = "dockerhub-creds"
+  DOCKER_USER = "darninidhi2122"
+  DOCKER_CRED = "dockerhub-creds"
 
-FRONTEND_IMAGE = "kubecoin-frontend"
-BACKEND_IMAGE  = "kubecoin-backend"
+  FRONTEND_IMAGE = "kubecoin-frontend"
+  BACKEND_IMAGE  = "kubecoin-backend"
 
-IMAGE_TAG = "${env.BUILD_NUMBER}"
+  IMAGE_TAG = "${env.BUILD_NUMBER}"
 
-APP_NAMESPACE   = "app"
-INFRA_NAMESPACE = "infra"
+  APP_NAMESPACE   = "app"
+  INFRA_NAMESPACE = "infra"
 
-APP_CHART   = "./kubecoin-chart/app"
-INFRA_CHART = "./kubecoin-chart/postgres"
-
-}
-
-triggers {
-githubPush()
+  APP_CHART   = "./kubecoin-chart/app"
+  INFRA_CHART = "./kubecoin-chart/postgres"
 }
 
 stages {
@@ -78,7 +74,7 @@ stage('Push Docker Images') {
   }
 }
 
-stage('Create Namespaces if Missing') {
+stage('Create Namespaces') {
   steps {
     sh '''
     kubectl get ns $APP_NAMESPACE || kubectl create ns $APP_NAMESPACE
@@ -87,7 +83,7 @@ stage('Create Namespaces if Missing') {
   }
 }
 
-stage('Deploy Infrastructure (Postgres)') {
+stage('Deploy Postgres') {
   steps {
     sh """
     helm upgrade --install postgres ${INFRA_CHART} \
@@ -97,7 +93,7 @@ stage('Deploy Infrastructure (Postgres)') {
   }
 }
 
-stage('Deploy Application (Frontend + Backend)') {
+stage('Deploy App') {
   steps {
     sh """
     helm upgrade --install kubecoin ${APP_CHART} \
@@ -113,11 +109,8 @@ stage('Deploy Application (Frontend + Backend)') {
 stage('Verify Deployment') {
   steps {
     sh '''
-    echo "Checking app namespace..."
     kubectl get pods -n app
     kubectl get svc -n app
-
-    echo "Checking infra namespace..."
     kubectl get pods -n infra
     kubectl get svc -n infra
     '''
@@ -127,21 +120,15 @@ stage('Verify Deployment') {
 }
 
 post {
-  
-success {
-  echo "Application deployed successfully using Helm."
-}
-
-failure {
-  echo "Pipeline failed. Check logs."
-}
-
-post {
+  success {
+    echo "Application deployed successfully using Helm."
+  }
+  failure {
+    echo "Pipeline failed. Check logs."
+  }
   always {
-    sh 'docker logout'
     cleanWs()
   }
 }
 
-}
 }
