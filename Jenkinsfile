@@ -10,6 +10,7 @@ agent {
 environment {
 
   DOCKER_USER = "darninidhi2122"
+  DOCKER_CRED = "dockerhub-creds"
 
   FRONTEND_IMAGE = "kubecoin-frontend"
   BACKEND_IMAGE  = "kubecoin-backend"
@@ -34,27 +35,43 @@ stage('Checkout Source') {
 stage('Verify Tools') {
   steps {
     sh '''
+    docker --version
     kubectl version --client
     helm version
     '''
   }
 }
 
-stage('Build & Push Images (Kaniko)') {
+stage('Docker Login') {
   steps {
-    container('kaniko') {
-      sh """
-      /kaniko/executor \
-        --context=frontend \
-        --dockerfile=frontend/Dockerfile \
-        --destination=$DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG
-
-      /kaniko/executor \
-        --context=backend \
-        --dockerfile=backend/Dockerfile \
-        --destination=$DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG
-      """
+    withCredentials([usernamePassword(
+      credentialsId: DOCKER_CRED,
+      usernameVariable: 'DOCKER_USERNAME',
+      passwordVariable: 'DOCKER_PASSWORD'
+    )]) {
+      sh '''
+      echo "$DOCKER_PASSWORD" | docker login \
+      -u "$DOCKER_USERNAME" --password-stdin
+      '''
     }
+  }
+}
+
+stage('Build Docker Images') {
+  steps {
+    sh """
+    docker build -t $DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG frontend/
+    docker build -t $DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG backend/
+    """
+  }
+}
+
+stage('Push Docker Images') {
+  steps {
+    sh """
+    docker push $DOCKER_USER/$FRONTEND_IMAGE:$IMAGE_TAG
+    docker push $DOCKER_USER/$BACKEND_IMAGE:$IMAGE_TAG
+    """
   }
 }
 
